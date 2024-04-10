@@ -37,23 +37,24 @@ def scrape_job_listings(driver, url, search_keyword, origin, pages):
                 time = listing.find_element(
                     By.CSS_SELECTOR, '[data-testid="myJobsStateDate"]').text
                 job_data.append([title, company, location, time])
-                print(f"{time}")
             except Exception as e:
                 print(f"Error: {e}")
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        executor.map(scrape_page, range(pages))
+    for i in range(pages):
+        scrape_page(i)
+
+    # with ThreadPoolExecutor(max_workers=10) as executor:
+        # executor.map(scrape_page, range(pages))
 
     return job_data
 
 
-driver = webdriver.Chrome()
-
 PAGES = 20  # 10 jobs per page
-KEYWORD = "software engineer".replace(" ", "+")
-LOC = "San Jose".replace(" ", "+")
+KEYWORD = input("Job Keyword:").replace(" ", "+")
+LOC = input("Location:").replace(" ", "+")
 URL = f"https://www.indeed.com/jobs?"
 
+driver = webdriver.Chrome()
 driver.get(URL)
 
 job_data = scrape_job_listings(driver, URL, KEYWORD, LOC, PAGES)
