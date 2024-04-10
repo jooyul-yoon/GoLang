@@ -1,10 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
 import csv
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 
 def to_csv(data, filename):
@@ -23,6 +22,9 @@ def scrape_job_listings(driver, url, search_keyword, origin, pages):
         start = 10 * page_num
         driver.get(
             f"{url}q={search_keyword}&l={origin}&radius=50&start={start}")
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.CLASS_NAME, "cardOutline"))
+        )
         job_listings = driver.find_elements(By.CLASS_NAME, "cardOutline")
         for listing in job_listings:
             try:
@@ -46,7 +48,8 @@ def scrape_job_listings(driver, url, search_keyword, origin, pages):
 
 
 driver = webdriver.Chrome()
-PAGES = 20
+
+PAGES = 20  # 10 jobs per page
 KEYWORD = "software engineer".replace(" ", "+")
 LOC = "San Jose".replace(" ", "+")
 URL = f"https://www.indeed.com/jobs?"
