@@ -1,5 +1,4 @@
 import csv
-import time
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -15,39 +14,43 @@ def to_csv(data, filename):
             writer.writerow(row)
 
 
-def scrape_job_listings(driver, url, search_keyword, pages):
+def scrape_job_listings(driver, url, search_keyword, origin, pages):
     job_data = []
-    for page_num in range(1, pages + 1):
-        driver.get(f"{url}?keywords={search_keyword}&pageNum={page_num}")
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located(
-            (By.CLASS_NAME, "jobs-search__results-list")))
-        job_listings = driver.find_elements(By.CLASS_NAME, "base-card")
+    for page_num in range(pages):
+        start = 10 * page_num
+        driver.get(
+            f"{url}q={search_keyword}&l={origin}&radius=50&start={start}")
+        # WebDriverWait(driver, 10).until(EC.presence_of_element_located(
+        # (By.CLASS_NAME, "css-zu9cdh eu4oa1w0")))
+        job_listings = driver.find_elements(
+            By.CLASS_NAME, "cardOutline")
         for listing in job_listings:
-            try:
-                title = listing.find_element(
-                    By.CLASS_NAME, "base-search-card__title").get_attribute('innerText')
-                company = listing.find_element(
-                    By.CLASS_NAME, "base-search-card__subtitle").get_attribute('innerText')
-                location = listing.find_element(
-                    By.CLASS_NAME, "job-search-card__location").get_attribute('innerText')
-                posted_time = listing.find_element(
-                    By.CLASS_NAME, "job-search-card__listdate").get_attribute('innerText')
-                job_data.append([title, company, location, posted_time])
-            except:
-                pass
+            # try:
+            title = listing.find_element(
+                By.CLASS_NAME, "jobTitle").find_element(By.TAG_NAME, "span").text
+            company = listing.find_element(
+                By.XPATH, "//*[@data-testid='company-name']").text
+            location = listing.find_element(
+                By.XPATH, "//*[@data-testid='text-location']").text
+            time = listing.find_element(
+                By.CSS_SELECTOR, '[data-testid="myJobsStateDate"]').text
+            job_data.append([title, company, location, time])
+            print(f"{time}")
+            # except:
+            #     pass
     return job_data
 
 
 driver = webdriver.Chrome()
-PAGES = 1
-search_keyword = "python developer".replace(" ", "%20")
-url = "https://www.linkedin.com/jobs/search/"
-filename = "jobs"
+PAGES = 10
+KEYWORD = "software engineer".replace(" ", "+")
+LOC = "San Jose".replace(" ", "+")
+URL = f"https://www.indeed.com/jobs?"
 
-driver.get(url)
+driver.get(URL)
 
-job_data = scrape_job_listings(driver, url, search_keyword, PAGES)
-to_csv(job_data, filename)
+job_data = scrape_job_listings(driver, URL, KEYWORD, LOC, PAGES)
+to_csv(job_data, KEYWORD+", "+LOC)
 
 
 driver.quit()
