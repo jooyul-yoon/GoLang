@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import csv
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -16,12 +17,13 @@ def to_csv(data, filename):
 
 def scrape_job_listings(driver, url, search_keyword, origin, pages):
     job_data = []
-    for page_num in range(pages):
+
+    def scrape_page(page_num):
+        nonlocal job_data
         start = 10 * page_num
         driver.get(
             f"{url}q={search_keyword}&l={origin}&radius=50&start={start}")
-        job_listings = driver.find_elements(
-            By.CLASS_NAME, "cardOutline")
+        job_listings = driver.find_elements(By.CLASS_NAME, "cardOutline")
         for listing in job_listings:
             try:
                 title = listing.find_element(
@@ -34,13 +36,17 @@ def scrape_job_listings(driver, url, search_keyword, origin, pages):
                     By.CSS_SELECTOR, '[data-testid="myJobsStateDate"]').text
                 job_data.append([title, company, location, time])
                 print(f"{time}")
-            except:
-                pass
+            except Exception as e:
+                print(f"Error: {e}")
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        executor.map(scrape_page, range(pages))
+
     return job_data
 
 
 driver = webdriver.Chrome()
-PAGES = 1
+PAGES = 20
 KEYWORD = "software engineer".replace(" ", "+")
 LOC = "San Jose".replace(" ", "+")
 URL = f"https://www.indeed.com/jobs?"
